@@ -33,8 +33,8 @@ module.exports = {
                     w: 20,
                     h: 20,
                     color: mycolor,
-                    // lineWidth: 10,
-                    lineColor: mycolor,
+                    lineWidth: 1,
+                    lineColor: 'black',
                 })
                 myX = myX + 30
             }
@@ -48,11 +48,11 @@ module.exports = {
 
 }
 function componentToHex(c) {
-    var hex = c.toString(16);
-    return hex.length == 1 ? "0" + hex : hex;
+    return "#" + ((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1);
   }
   
   function rgbToHex(rgbString) {
     let rgb = rgbString.split(',')
-    return "#" + componentToHex(rgb[0]) + componentToHex(rgb[1]) + componentToHex(rgb[2]);
-  }
+    //return "#" + componentToHex(rgb[0]) + componentToHex(rgb[1]) + componentToHex(rgb[2]);
+    return "#" + ((1 << 24) + (parseInt(rgb[0]) << 16) + (parseInt(rgb[1]) << 8) + parseInt(rgb[2])).toString(16).slice(1);
+}
