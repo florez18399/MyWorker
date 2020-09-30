@@ -1,6 +1,8 @@
-const app = require('express')()
+const express = require('express')
+const app = express()
 const path = require('path')
 const fs = require('fs')
+const multer = require('multer')
 var ffmpeg = require('fluent-ffmpeg');
 var jimp = require('jimp')
 const { resolve } = require('path');
@@ -8,13 +10,27 @@ const { rejects } = require('assert');
 const port = 3000
 var pdfGenerator = require('./pdfGen')
 
-app.get('/', (req, res) => {
+//----------------MULTER CONFIG -----------------
+app.use(express.json());
+app.use(express.urlencoded({extended: false}));
+//app.use('/public/images',express.static(path.join(__dirname, 'public/images')));
+const storage = multer.diskStorage({
+    destination: path.join(__dirname, 'public/videos'),
+    filename: (req, file, cb) => {  
+        console.log(file);
+        return cb(null, new Date().getTime() + path.extname(file.originalname));
+    }
+});
+var upload = multer({storage}).single('file'); 
+//--------------------------------
+app.get('/', upload, (req, res) => {
 
     /**getColorPixels('thumbnail-at-292.8024-seconds.png').then(async (colorPixels) => {
         let majorColors = await getMajorColors(colorPixels)
         console.log(majorColors);
     })**/
-    test()
+    //test()
+    console.log(req.file);
     res.send('Hello World!')
 })
 
@@ -28,7 +44,7 @@ app.get('/thumbnail', (req, res) => {
         Promise.all(processFiles).then(async values => {
             majorColors = await getAllMajor(values)
             console.log(majorColors);
-            pdfGenerator.generatePDF('test4.pdf', majorColors, newFiles)
+            pdfGenerator.generatePDF('test2.pdf', majorColors, newFiles)
             res.send('Tu pdf se esta creando ')
         })
     })
@@ -42,7 +58,7 @@ app.listen(port, () => {
 function generateThumbnail(cb) {
     console.log('Generando miniaturas')
     let newFiles = []
-    var proc = new ffmpeg(path.join(__dirname, '/public/videos/1_720.mp4'))
+    var proc = new ffmpeg(path.join(__dirname, '/public/videos/3_360.mp4'))
         .screenshots({
             timestamps: ['20%', '40%', '60%', '80%', '99%'],
             filename: 'thumbnail-at-%s-seconds.png',
