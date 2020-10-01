@@ -9,6 +9,7 @@ const { resolve } = require('path');
 const { rejects } = require('assert');
 const port = 3000
 var pdfGenerator = require('./pdfGen')
+var mailer = require('./mailer')
 
 //----------------MULTER CONFIG -----------------
 app.use(express.json());
@@ -23,7 +24,7 @@ const storage = multer.diskStorage({
 });
 var upload = multer({storage}).single('file'); 
 //--------------------------------
-app.get('/', upload, (req, res) => {
+app.get('/upload', upload, (req, res) => {
 
     /**getColorPixels('thumbnail-at-292.8024-seconds.png').then(async (colorPixels) => {
         let majorColors = await getMajorColors(colorPixels)
@@ -31,11 +32,24 @@ app.get('/', upload, (req, res) => {
     })**/
     //test()
     console.log(req.file);
-    res.send('Hello World!')
+    console.log(req.body.email)
+    if(req.file) {
+        res.status(200).json({message: 'Guardado', filename: req.file.filename})
+    }else {
+        res.status(400).json({message: 'No se recibio ningun video' } )
+    }
+    
 })
 
-app.get('/thumbnail', (req, res) => {
-    generateThumbnail((newFiles) => {
+app.get('/thumbnail', upload, (req, res) => {
+    let file, email
+    if(req.file) {
+        file = req.file.filename
+        email = req.body.email
+    }else {
+        res.status(400).json({message: 'No se recibio ningun video' } )
+    }
+    generateThumbnail(file, (newFiles) => {
         processFiles = []
         let majorColors = []
         for (let i = 0; i < newFiles.length; i++) {
@@ -44,8 +58,10 @@ app.get('/thumbnail', (req, res) => {
         Promise.all(processFiles).then(async values => {
             majorColors = await getAllMajor(values)
             console.log(majorColors);
-            pdfGenerator.generatePDF('test2.pdf', majorColors, newFiles)
-            res.send('Tu pdf se esta creando ')
+            pdfGenerator.generatePDF(file + '.pdf', majorColors, newFiles, (namePDF) => {
+                mailer.sendEmail(namePDF, email)
+            })
+            res.status(200).json({message: 'El video esta siendo procesado' })
         })
     })
 
@@ -55,13 +71,13 @@ app.listen(port, () => {
     console.log(`Example app listening at http://localhost:${port}`)
 })
 
-function generateThumbnail(cb) {
+function generateThumbnail(file, cb) {
     console.log('Generando miniaturas')
     let newFiles = []
-    var proc = new ffmpeg(path.join(__dirname, '/public/videos/3_360.mp4'))
+    var proc = new ffmpeg(path.join(__dirname, '/public/videos/', file))
         .screenshots({
             timestamps: ['20%', '40%', '60%', '80%', '99%'],
-            filename: 'thumbnail-at-%s-seconds.png',
+            filename: file + '_thumb-at-%s-seconds.png',
             folder: path.join(__dirname, '/public/images'),
             size: '200x140'
         }).on('filenames', function (filenames) {

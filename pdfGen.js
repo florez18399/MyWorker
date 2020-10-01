@@ -10,7 +10,7 @@ const fonts = {
     }
 };
 module.exports = {
-    generatePDF: (namePDF, listMajorColors, listFiles) => {
+    generatePDF: (namePDF, listMajorColors, listFiles, cb) => {
         console.log('Generando PDF');
         var printer = new pdfmake(fonts);
         let docDefinition = {
@@ -43,6 +43,7 @@ module.exports = {
 
         var pdfDoc = printer.createPdfKitDocument(docDefinition);
         pdfDoc.pipe(fs.createWriteStream(path.join(__dirname, '/public/reports/', namePDF)));
+        cb(namePDF)
         pdfDoc.end();
     }
 
